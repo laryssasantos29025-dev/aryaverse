@@ -1,0 +1,5 @@
+"use client";
+import type { ChapterArtifact, ChapterArtifactType } from "@/types/study-flow";
+import { createId, readCollection, writeCollection } from "./local-store";
+const key = "aryaverse-artifacts";
+export const artifactRepository = { list: (chapterId: string, type?: ChapterArtifactType) => readCollection<ChapterArtifact>(key).filter((item) => item.chapterId === chapterId && (!type || item.type === type)), save: (chapterId: string, type: ChapterArtifactType, content: string, source?: Pick<ChapterArtifact, "sourceText" | "sourceArea">) => { const record: ChapterArtifact = { id: createId(), chapterId, type, content, ...source, createdAt: new Date().toISOString() }; writeCollection(key, [...readCollection<ChapterArtifact>(key), record]); return record; }, update: (id: string, content: string) => { const items = readCollection<ChapterArtifact>(key); const updated = items.map((item) => item.id === id ? { ...item, content } : item); writeCollection(key, updated); return updated.find((item) => item.id === id) ?? null; }, remove: (id: string) => writeCollection(key, readCollection<ChapterArtifact>(key).filter((item) => item.id !== id)) };
