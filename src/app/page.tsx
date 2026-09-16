@@ -1,10 +1,5 @@
-import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { DashboardOverview } from "@/features/dashboard/dashboard-overview";
+import { LandingPage } from "@/features/public/landing-page";
 
 export default function Home() {
-  return (
-    <DashboardShell>
-      <DashboardOverview />
-    </DashboardShell>
-  );
+  return <LandingPage />;
 }

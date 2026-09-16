@@ -3,15 +3,19 @@
 const PROFILE_KEY = "arya-local-profile";
 const SESSION_KEY = "arya-local-session";
 const SESSION_COOKIE = "arya-local-session";
+const AUDIT_KEY = "arya-auth-audit";
 const HASH_ITERATIONS = 310_000;
 
 export type LocalProfile = {
   name: string;
+  role?: "admin" | "user";
   passwordHash: string;
   salt: string;
   iterations: number;
   createdAt: string;
 };
+
+export type AuthAuditEntry = { id: string; name: string; type: "login" | "logout"; createdAt: string };
 
 function bytesToBase64(bytes: Uint8Array) {
   let value = "";
@@ -43,12 +47,26 @@ function notify() {
   window.dispatchEvent(new Event("arya-local-auth-change"));
 }
 
+function recordAuthEvent(name: string, type: AuthAuditEntry["type"]) {
+  const current = readAuditLog();
+  const entry: AuthAuditEntry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, name, type, createdAt: new Date().toISOString() };
+  localStorage.setItem(AUDIT_KEY, JSON.stringify([entry, ...current].slice(0, 100)));
+}
+
+function readAuditLog(): AuthAuditEntry[] {
+  try { return JSON.parse(localStorage.getItem(AUDIT_KEY) ?? "[]") as AuthAuditEntry[]; } catch { return []; }
+}
+
 export function getLocalProfile(): LocalProfile | null {
   try {
     const value = localStorage.getItem(PROFILE_KEY);
-    return value ? JSON.parse(value) as LocalProfile : null;
+    if (!value) return null;
+    const profile = JSON.parse(value) as LocalProfile;
+    return { ...profile, role: profile.role ?? (profile.name.trim().toLocaleLowerCase() === "lary" ? "admin" : "user") };
   } catch { return null; }
 }
+
+export function getAuthAuditLog() { return readAuditLog(); }
 
 export function hasLocalSession() {
   return localStorage.getItem(SESSION_KEY) === "active";
@@ -59,6 +77,7 @@ export async function registerLocalProfile(name: string, password: string) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const profile: LocalProfile = {
     name: name.trim(),
+    role: name.trim().toLocaleLowerCase() === "lary" ? "admin" : "user",
     passwordHash: await hashPassword(password, salt, HASH_ITERATIONS),
     salt: bytesToBase64(salt),
     iterations: HASH_ITERATIONS,
@@ -66,6 +85,7 @@ export async function registerLocalProfile(name: string, password: string) {
   };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
   createLocalSession();
+  recordAuthEvent(profile.name, "login");
   return profile;
 }
 
@@ -75,6 +95,7 @@ export async function loginWithLocalProfile(name: string, password: string) {
   const hash = await hashPassword(password, base64ToBytes(profile.salt), profile.iterations);
   if (!equalHashes(profile.passwordHash, hash)) return false;
   createLocalSession();
+  recordAuthEvent(profile.name, "login");
   return true;
 }
 
@@ -85,6 +106,8 @@ export function createLocalSession() {
 }
 
 export function logoutLocalProfile() {
+  const profile = getLocalProfile();
+  if (profile) recordAuthEvent(profile.name, "logout");
   localStorage.removeItem(SESSION_KEY);
   document.cookie = `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Strict`;
   notify();
