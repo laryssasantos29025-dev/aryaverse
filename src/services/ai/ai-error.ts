@@ -5,7 +5,7 @@ import { APIError } from "openai";
 export type AiFailureCode = "OPENAI_NOT_CONFIGURED" | "OPENAI_INVALID_KEY" | "OPENAI_INSUFFICIENT_CREDITS" | "OPENAI_RATE_LIMITED" | "OPENAI_MODEL_UNAVAILABLE" | "OPENAI_INVALID_REQUEST" | "OPENAI_TIMEOUT" | "OPENAI_RESPONSE_INVALID" | "OPENAI_NETWORK_ERROR" | "OPENAI_INTERNAL_ERROR";
 
 const messages: Record<AiFailureCode, string> = {
-  OPENAI_NOT_CONFIGURED: "Arya ainda não está conectada à inteligência artificial. Em desenvolvimento, configure OPENAI_API_KEY em .env.local.",
+  OPENAI_NOT_CONFIGURED: "A IA ainda não está configurada neste site. Na Netlify, adicione OPENAI_API_KEY em Project configuration > Environment variables e publique um novo deploy.",
   OPENAI_INVALID_KEY: "A chave de acesso da Arya não foi aceita. Revise OPENAI_API_KEY em .env.local.",
   OPENAI_INSUFFICIENT_CREDITS: "A conexão da Arya está ativa, mas a conta da API não possui créditos disponíveis. Adicione créditos no faturamento da OpenAI para continuar.",
   OPENAI_RATE_LIMITED: "Arya recebeu muitas solicitações em pouco tempo. Aguarde um instante e tente novamente.",
