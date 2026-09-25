@@ -7,6 +7,7 @@ import { artifactRepository } from "@/services/repositories/artifact-repository"
 import { bookAssessmentRepository } from "@/services/repositories/book-assessment-repository";
 import { finalAssessmentRepository } from "@/services/repositories/final-assessment-repository";
 import { subjectRepository } from "@/services/repositories/subject-repository";
+import { readApiJson } from "@/lib/utils";
 import { ensureSubjectHierarchy, normalBookSources, subjectSources } from "@/services/study-hierarchy";
 import type { BookAssessmentRecord, FinalAssessmentRecord, Quiz } from "@/types/study-flow";
 
@@ -44,7 +45,7 @@ export function FinalAssessmentWorkspace({ subjectId, bookId, scope = "subject" 
     setStatus(kind === "generalReview" ? "Organizando os conteúdos..." : kind === "quickReview" ? "Preparando a revisão rápida..." : "Distribuindo os flashcards entre os conteúdos...");
     try {
       const response = await fetch("/api/ai/final-assessment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, sources }) });
-      const payload = await response.json() as { content?: string; error?: string };
+      const payload = await readApiJson<{ content?: string; error?: string }>(response);
       if (!response.ok || !payload.content) throw new Error(payload.error ?? "Não consegui preparar este material agora.");
       persist({ ...record, [kind]: payload.content, sourceFingerprint: fingerprint });
       setStatus("Material preparado e salvo.");
